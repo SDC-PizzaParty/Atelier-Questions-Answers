@@ -9,3 +9,5 @@ dist/
 *.map
 
 package-lock.json
+
+server/db/dataset/
