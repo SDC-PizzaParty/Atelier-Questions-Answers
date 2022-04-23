@@ -1,3 +1,7 @@
+DROP TABLE IF EXISTS questions;
+DROP TABLE IF EXISTS answers;
+DROP TABLE IF EXISTS photos;
+
 CREATE TABLE IF NOT EXISTS questions (
   id SERIAL PRIMARY KEY,
   product_id INT NOT NULL,
@@ -12,6 +16,7 @@ CREATE TABLE IF NOT EXISTS questions (
 CREATE TABLE IF NOT EXISTS answers (
   id SERIAL PRIMARY KEY,
   question_id INT NOT NULL,
+  FOREIGN KEY (question_id) REFERENCES questions(id),
   body varchar(255),
   date_written BIGINT,
   answerer_name varchar(255),
@@ -23,5 +28,6 @@ CREATE TABLE IF NOT EXISTS answers (
 CREATE TABLE IF NOT EXISTS photos (
   id SERIAL PRIMARY KEY,
   answer_id INT NOT NULL,
+  FOREIGN KEY (answer_id) REFERENCES answers(id),
   url varchar(255)
 );
