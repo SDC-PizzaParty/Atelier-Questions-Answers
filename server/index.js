@@ -6,6 +6,25 @@ const db = require('./db/postgres.js')
 const app = express();
 app.use(express.json());
 
+// photo handler
+var getPhotos = (answer_id) => {
+  db.query(`SELECT * FROM photos WHERE answer_id = ${answer_id}`, (err, result) => {
+    if (err) {
+      console.log(err);
+      return;
+    }
+    // console.log(result.rows)
+    for (let i = 0; i < result.rows.length; i++) {
+      var photoWrapper = {};
+      photoWrapper.id = result.rows[i].id;
+      photoWrapper.url = result.rows[i].url;
+      result.rows[i] = photoWrapper;
+    }
+    console.log(photoWrapper);
+    return photoWrapper;
+  });
+}
+
 // test
 app.get('/test', (req, res) => {
   res.send('test success!');
@@ -23,6 +42,17 @@ app.get('/qa/questions', (req, res) => {
     if (err) {
       res.status(500).send(err);
       return;
+    }
+    for (let i = 0; i < result.rows.length; i++) {
+      var questionWrapper = {};
+      questionWrapper.question_id = result.rows[i].id;
+      questionWrapper.question_body = result.rows[i].body;
+      questionWrapper.question_date = result.rows[i].date_written;
+      questionWrapper.asker_name = result.rows[i].asker_name;
+      questionWrapper.question_helpfulness = result.rows[i].helpful;
+      questionWrapper.reported = result.rows[i].reported;
+      questionWrapper.answers = {};
+      result.rows[i] = questionWrapper;
     }
     container.results = result.rows;
     res.send(container);
@@ -45,6 +75,17 @@ app.get(`/qa/questions/:question_id/answers`, (req, res) => {
       res.status(500).send(err);
       return;
     }
+    // console.log(result.rows)
+    for (let i = 0; i < result.rows.length; i++) {
+      var answerWrapper = {};
+      answerWrapper.answer_id = result.rows[i].id;
+      answerWrapper.body = result.rows[i].body;
+      answerWrapper.date = result.rows[i].date_written;
+      answerWrapper.answerer_name = result.rows[i].answerer_name;
+      answerWrapper.helpfulness = result.rows[i].helpful;
+      answerWrapper.photos = getPhotos(result.rows[i].id);
+      result.rows[i] = answerWrapper;
+    }
     container.results = result.rows;
     res.send(container);
   })
@@ -58,10 +99,6 @@ app.post('/qa/questions', (req, res) => {
     let name = req.query.name;
     let email = req.query.email;
     let product_id = req.query.product_id;
-    // console.log(body)
-    // console.log(name)
-    // console.log(email)
-    // console.log(product_id)
     db.query(`INSERT INTO questions (body, asker_name, asker_email, product_id, reported, helpful) VALUES (${body}, ${name}, ${email}, ${product_id}, false, 0)`, (err, result) => {
       if (err) {
         res.status(500).send(err);
@@ -84,10 +121,27 @@ app.post(`/qa/questions/:question_id/answers`, (req, res) => {
     let email = req.query.email;
     let photos = req.query.photos;
     let question_id = req.params.question_id;
-    db.query(`INSERT INTO answers (body, answerer_name, answerer_email, question_id, reported, helpful) VALUES (${body}, ${name}, ${email}, ${question_id}, false, 0)`, (err, result) => {
+    db.query(`
+      INSERT INTO answers(
+        body, answerer_name, answerer_email, question_id, reported, helpful
+      ) VALUES (
+        ${body}, ${name}, ${email}, ${question_id}, false, 0
+      )
+    `, (err, result) => {
       if (err) {
         res.status(500).send(err);
         return;
+      }
+      if (photos !== []) {
+        for (let i = 0; i < photos.length; i++) {
+          db.query(`
+          INSERT INTO photos(
+            answer_id, url
+          )
+          VALUES(
+            answer_id, ${req.query.photos}
+          )`)
+        }
       }
       res.status(201).send(result);
     })

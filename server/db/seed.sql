@@ -3,7 +3,7 @@ FROM '/Users/grample/Desktop/repos/Atelier-Questions-Answers/server/db/dataset/q
 DELIMITER ','
 CSV HEADER;
 
-UPDATE questions SET date_written=date_written / 1000;
+UPDATE questions SET date_written = date_written / 1000;
 ALTER TABLE questions ALTER COLUMN date_written TYPE timestamp without time zone using to_timestamp(date_written) AT TIME ZONE 'UTC';
 ALTER TABLE questions ALTER COLUMN date_written SET DEFAULT NOW();
 
@@ -14,7 +14,7 @@ FROM '/Users/grample/Desktop/repos/Atelier-Questions-Answers/server/db/dataset/a
 DELIMITER ','
 CSV HEADER;
 
-UPDATE answers SET date_written=date_written/1000;
+UPDATE answers SET date_written = date_written / 1000;
 ALTER TABLE answers ALTER COLUMN date_written TYPE timestamp without time zone using to_timestamp(date_written) AT TIME ZONE 'UTC';
 ALTER TABLE answers ALTER COLUMN date_written SET DEFAULT NOW();
 
@@ -24,3 +24,5 @@ COPY photos(id, answer_id, url)
 FROM '/Users/grample/Desktop/repos/Atelier-Questions-Answers/server/db/dataset/answers_photos.csv'
 DELIMITER ','
 CSV HEADER;
+
+ALTER SEQUENCE photos_id_seq RESTART WITH 2063760;
