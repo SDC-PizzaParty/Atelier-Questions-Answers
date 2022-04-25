@@ -14,12 +14,12 @@ pool.connect();
 
 // Questions List
 var query = (query, cb) => {
-  pool.query(query, ((err, res) => {
+  pool.query(query, (err, res) => {
     if (err) {
-      console.log(err);
+      cb(err, res);
     }
-    cb(err, res);
-  }));
+    cb(null, res);
+  });
 }
 
 module.exports = {
