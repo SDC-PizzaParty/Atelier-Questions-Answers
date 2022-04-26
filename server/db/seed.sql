@@ -1,5 +1,5 @@
 COPY questions(id, product_id, body, date_written, asker_name, asker_email, reported, helpful)
-FROM '/Users/grample/Desktop/repos/Atelier-Questions-Answers/server/db/dataset/questions.csv'
+FROM '/home/ubuntu/Atelier-Questions-Answers/server/db/dataset/questions.csv'
 DELIMITER ','
 CSV HEADER;
 
@@ -10,7 +10,7 @@ ALTER TABLE questions ALTER COLUMN date_written SET DEFAULT NOW();
 ALTER SEQUENCE questions_id_seq RESTART WITH 3518964;
 
 COPY answers(id, question_id, body, date_written, answerer_name, answerer_email, reported, helpful)
-FROM '/Users/grample/Desktop/repos/Atelier-Questions-Answers/server/db/dataset/answers.csv'
+FROM '/home/ubuntu/Atelier-Questions-Answers/server/db/dataset/answers.csv'
 DELIMITER ','
 CSV HEADER;
 
@@ -21,7 +21,7 @@ ALTER TABLE answers ALTER COLUMN date_written SET DEFAULT NOW();
 ALTER SEQUENCE answers_id_seq RESTART WITH 6879307;
 
 COPY photos(id, answer_id, url)
-FROM '/Users/grample/Desktop/repos/Atelier-Questions-Answers/server/db/dataset/answers_photos.csv'
+FROM '/home/ubuntu/Atelier-Questions-Answers/server/db/dataset/answers_photos.csv'
 DELIMITER ','
 CSV HEADER;
 
