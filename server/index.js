@@ -14,85 +14,97 @@ app.get('/test', (req, res) => {
 
 // Questions List
 app.get('/qa/questions', (req, res) => {
-  const page = req.query.page || 1;
+  const page = req.query.page || 0;
   const count = req.query.count || 5;
-  const container = {
-    product_id: req.query.product_id,
-    results: []
-  };
-  db.query(`SELECT json_agg(
-    json_build_object(
-      'question_id', q.id,
-      'question_body', q.body,
-      'question_date', q.date_written,
-      'asker_name', q.asker_name,
-      'question_helpfulness', q.helpful,
-      'reported', q.reported,
-      'answers', (
-        SELECT json_object_agg(a.id, json_build_object(
-            'id', a.id,
-            'body', a.body,
-            'date', a.date_written,
-            'answerer_name', a.answerer_name,
-            'helpfulness', a.helpful,
-            'photos', (
-              SELECT (
-                json_agg(
-                  json_build_object(
-                    'id', p.id,
-                    'url', p.url
+  db.query(`SELECT json_build_object(
+    'product_id', ${req.query.product_id},
+    'results', (
+      json_agg(
+        json_build_object(
+          'question_id', q.id,
+          'question_body', q.body,
+          'question_date', q.date_written,
+          'asker_name', q.asker_name,
+          'question_helpfulness', q.helpful,
+          'reported', q.reported,
+          'answers', (
+            SELECT (
+              coalesce(
+                json_object_agg(
+                  a.id, json_build_object(
+                    'id', a.id,
+                    'body', a.body,
+                    'date', a.date_written,
+                    'answerer_name', a.answerer_name,
+                    'helpfulness', a.helpful,
+                    'photos', (
+                      SELECT (
+                        coalesce(
+                          json_agg(
+                            json_build_object(
+                              'id', p.id,
+                              'url', p.url
+                            )
+                          ), '[]'
+                        )
+                      ) FROM photos p WHERE p.answer_id = a.id
+                    )
                   )
-                )
-              ) FROM photos p WHERE p.answer_id = a.id
-            )
+                ), '{}'
+              )
+            ) FROM answers a WHERE a.question_id = q.id AND a.reported = false
           )
-        ) FROM answers a WHERE a.question_id = q.id
+        )
       )
     )
-  ) FROM questions q WHERE q.product_id = ${req.query.product_id}`, (err, result) => {
+  ) FROM questions q WHERE q.product_id = ${req.query.product_id} AND q.reported = false
+  LIMIT ${count} OFFSET ${page * count}`, (err, result) => {
     if (err) {
       console.log(err);
       return;
     }
-    // console.log(result)
-    container.results = result.rows[0].json_agg;
-    res.send(container);
+    res.send(result.rows[0].json_build_object);
   });
 });
 
 // Answers List
 // GET /qa/questions/:question_id/answers
 app.get(`/qa/questions/:question_id/answers`, (req, res) => {
-  const page = req.query.page || 1;
+  const page = req.query.page || 0;
   const count = req.query.count || 5;
-  const container = {
-    question: req.params.question_id,
-    page: page,
-    count: count,
-    results: [],
-  };
-  db.query(`SELECT json_agg(json_build_object(
-        'answer_id', a.id,
-        'body', a.body,
-        'date', a.date_written,
-        'answerer_name', a.answerer_name,
-        'helpfulness', a.helpful,
-        'photos', (
-          SELECT (
-            json_agg(
-              json_build_object(
-                'id', p.id,
-                'url', p.url
+  db.query(`SELECT json_build_object(
+    'question', ${req.params.question_id},
+    'page', ${page},
+    'count', ${count},
+    'results', (
+      SELECT (json_agg(
+        json_build_object(
+          'answer_id', a.id,
+          'body', a.body,
+          'date', a.date_written,
+          'answerer_name', a.answerer_name,
+          'helpfulness', a.helpful,
+          'photos', (
+            SELECT (
+              coalesce(
+                json_agg(
+                  json_build_object(
+                    'id', p.id,
+                    'url', p.url
+                  )
+                ), '[]'
               )
-            )
-          ) FROM photos p WHERE p.answer_id = a.id)
-  )) FROM answers a WHERE a.question_id = ${req.params.question_id}`, (err, result) => {
+            ) FROM photos p WHERE p.answer_id = a.id
+          )
+        )
+      )) LIMIT ${count} OFFSET ${page * count}
+    )
+  ) FROM answers a WHERE a.question_id = ${req.params.question_id} AND a.reported = false`, (err, result) => {
     if (err) {
       console.log(err);
       return;
     }
-    container.results = result.rows[0].json_agg;
-    res.send(container);
+    res.send(result.rows[0].json_build_object);
   });
 });
 
@@ -103,7 +115,11 @@ app.post('/qa/questions', (req, res) => {
   let name = req.body.name;
   let email = req.body.email;
   let product_id = req.body.product_id;
-  db.query(`INSERT INTO questions (body, asker_name, asker_email, product_id, reported, helpful) VALUES ('${body}', '${name}', '${email}', '${product_id}', false, 0)`, (err, result) => {
+  db.query(`INSERT INTO questions (
+      body, asker_name, asker_email, product_id, reported, helpful
+    ) VALUES (
+      '${body}', '${name}', '${email}', '${product_id}', false, 0
+    )`, (err, result) => {
     if (err) {
       console.log(err)
       res.status(500).send(err);
@@ -120,7 +136,11 @@ app.post(`/qa/questions/:question_id/answers`, (req, res) => {
   let email = req.body.email;
   let question_id = req.params.question_id;
   console.log(body, name, email, question_id)
-  db.query(`INSERT INTO answers (body, answerer_name, answerer_email, question_id, reported, helpful) VALUES ('${body}', '${name}', '${email}', '${question_id}', false, 0) RETURNING id`, (err, result) => {
+  db.query(`INSERT INTO answers (
+      body, answerer_name, answerer_email, question_id, reported, helpful
+    ) VALUES (
+      '${body}', '${name}', '${email}', '${question_id}', false, 0
+    ) RETURNING id`, (err, result) => {
     if (err) {
       console.log(err);
       res.status(500).send(err);
@@ -131,7 +151,11 @@ app.post(`/qa/questions/:question_id/answers`, (req, res) => {
       // console.log(req.body.photos)
       for (let i = 0; i < req.body.photos.length; i++) {
         // console.log('ya')
-        db.query(`INSERT INTO photos (answer_id, url) VALUES (${result.rows[0].id}, '${req.body.photos[i]}')`, (err, result2) => {
+        db.query(`INSERT INTO photos (
+            answer_id, url
+          ) VALUES (
+            ${result.rows[0].id}, '${req.body.photos[i]}'
+          )`, (err, result2) => {
           if (err) {
             console.log(err);
             return;
