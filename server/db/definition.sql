@@ -13,7 +13,7 @@ ALTER SEQUENCE photos_id_seq RESTART WITH 2063760;
 CREATE INDEX qindex1 ON questions(id);
 CREATE INDEX qindex2 ON questions(product_id);
 CREATE INDEX aindex1 ON answers(id);
-CREATE INDEX aindex2 ON answers(questions_id);
+CREATE INDEX aindex2 ON answers(question_id);
 CREATE INDEX pindex1 ON photos(id);
 CREATE INDEX pindex2 ON photos(answer_id);
 
