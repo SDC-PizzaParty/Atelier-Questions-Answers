@@ -12,6 +12,10 @@ app.get('/test', (req, res) => {
   res.send('test success!');
 })
 
+app.get('/loaderio-e4e47ff407e8a6f36992b136f28bbddd', (req, res) => {
+  res.send('loaderio-e4e47ff407e8a6f36992b136f28bbddd');
+})
+
 // Questions List
 app.get('/qa/questions', (req, res) => {
   const page = req.query.page || 0;
