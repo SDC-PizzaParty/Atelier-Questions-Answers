@@ -67,6 +67,7 @@ app.get('/qa/questions', (req, res) => {
       console.log(err);
       return;
     }
+    console.log('GET questions success!');
     res.send(result.rows[0].json_build_object);
   });
 });
