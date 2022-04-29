@@ -14,7 +14,6 @@ app.get('/test', (req, res) => {
 
 app.get('/loaderio-27dd81aefeb58926aaf7f206b30815ab', (req, res) => {
   res.send('loaderio-27dd81aefeb58926aaf7f206b30815ab');
-})
 
 // Questions List
 app.get('/qa/questions', (req, res) => {
